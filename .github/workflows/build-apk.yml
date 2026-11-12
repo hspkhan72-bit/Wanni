@@ -21,27 +21,40 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle Wrapper & Properties
+      - name: Patch Source Code and Gradle
         working-directory: WaniTerminal
         run: |
-          # Ensure gradle wrapper exists
+          echo "=== 1. Fixing setTerminalShellPid in TerminalService.kt ==="
+          TARGET_FILE="app/src/main/java/com/wani/terminal/TerminalService.kt"
+          if [ -f "$TARGET_FILE" ]; then
+            # 'override fun setTerminalShellPid' se 'override' keyword remove karna
+            # agar interface change ho gaya ho ya signature match na karta ho
+            sed -i 's/override fun setTerminalShellPid/fun setTerminalShellPid/g' "$TARGET_FILE"
+            echo "Successfully patched $TARGET_FILE"
+          else
+            echo "Warning: $TARGET_FILE not found, searching..."
+            find . -name "TerminalService.kt" -exec sed -i 's/override fun setTerminalShellPid/fun setTerminalShellPid/g' {} +
+          fi
+
+          echo "=== 2. Setup Stable Gradle Wrapper (8.7) ==="
+          # Gradle 9+ Android Gradle Plugin ke sath masla karta hai, isliye stable 8.7 use karein
           if [ ! -f "./gradlew" ]; then
-            gradle wrapper
+            gradle wrapper --gradle-version 8.7
           fi
           chmod +x gradlew
-          
-          # Forcefully write AndroidX properties into gradle.properties
+
+          echo "=== 3. Setup gradle.properties ==="
           echo "" >> gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
+          echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m" >> gradle.properties
 
       - name: Build APK with Gradle
         working-directory: WaniTerminal
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: WaniTerminal-Debug-APK
           path: WaniTerminal/app/build/outputs/apk/debug/app-debug.apk
-          
