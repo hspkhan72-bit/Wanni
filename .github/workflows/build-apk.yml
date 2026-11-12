@@ -21,13 +21,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle & Wrapper
+      - name: Setup Gradle Wrapper & Properties
         working-directory: WaniTerminal
         run: |
+          # Ensure gradle wrapper exists
           if [ ! -f "./gradlew" ]; then
             gradle wrapper
           fi
           chmod +x gradlew
+          
+          # Automatically add AndroidX properties if missing
+          if ! grep -q "android.useAndroidX" gradle.properties; then
+            echo "android.useAndroidX=true" >> gradle.properties
+          fi
+          if ! grep -q "android.enableJetifier" gradle.properties; then
+            echo "android.enableJetifier=true" >> gradle.properties
+          fi
 
       - name: Build APK with Gradle
         working-directory: WaniTerminal
