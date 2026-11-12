@@ -30,13 +30,10 @@ jobs:
           fi
           chmod +x gradlew
           
-          # Automatically add AndroidX properties if missing
-          if ! grep -q "android.useAndroidX" gradle.properties; then
-            echo "android.useAndroidX=true" >> gradle.properties
-          fi
-          if ! grep -q "android.enableJetifier" gradle.properties; then
-            echo "android.enableJetifier=true" >> gradle.properties
-          fi
+          # Forcefully write AndroidX properties into gradle.properties
+          echo "" >> gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
 
       - name: Build APK with Gradle
         working-directory: WaniTerminal
